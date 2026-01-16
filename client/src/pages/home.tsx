@@ -7,8 +7,9 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronLeft, ChevronRight, ChevronDown, Filter } from "lucide-react";
-import { artworks, allMoods, allArtists, allEras, allStyles } from "@/data/artworks";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, ChevronDown, Filter, X, Maximize2 } from "lucide-react";
+import { artworks, allMoods, allArtists, allEras, allStyles, type Artwork } from "@/data/artworks";
 
 export default function Home() {
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
@@ -20,6 +21,7 @@ export default function Home() {
   const [artistOpen, setArtistOpen] = useState(true);
   const [eraOpen, setEraOpen] = useState(true);
   const [styleOpen, setStyleOpen] = useState(true);
+  const [fullscreenArtwork, setFullscreenArtwork] = useState<Artwork | null>(null);
 
   const filteredArtworks = useMemo(() => {
     return artworks.filter(artwork => {
@@ -234,13 +236,23 @@ export default function Home() {
                 {filteredArtworks.map(artwork => (
                   <Card key={artwork.id} className="overflow-hidden" data-testid={`card-artwork-${artwork.id}`}>
                     <CardContent className="p-0">
-                      <div className="w-full aspect-[16/10] overflow-hidden bg-muted">
+                      <div className="w-full aspect-[16/10] overflow-hidden bg-muted relative group">
                         <img 
                           src={artwork.imageUrl} 
                           alt={artwork.title}
-                          className="w-full h-full object-contain bg-neutral-100 dark:bg-neutral-900"
+                          className="w-full h-full object-contain bg-neutral-100 dark:bg-neutral-900 cursor-pointer"
+                          onClick={() => setFullscreenArtwork(artwork)}
                           data-testid={`img-artwork-${artwork.id}`}
                         />
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+                          onClick={() => setFullscreenArtwork(artwork)}
+                          data-testid={`button-fullscreen-${artwork.id}`}
+                        >
+                          <Maximize2 className="w-4 h-4" />
+                        </Button>
                       </div>
                       
                       <div className="p-6 md:p-8">
@@ -295,6 +307,39 @@ export default function Home() {
           </div>
         </ScrollArea>
       </main>
+
+      <Dialog open={fullscreenArtwork !== null} onOpenChange={(open) => !open && setFullscreenArtwork(null)}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-0" aria-describedby={undefined}>
+          {fullscreenArtwork && (
+            <div className="relative w-full h-full flex flex-col">
+              <DialogTitle className="sr-only">{fullscreenArtwork.title} - 전체 화면 보기</DialogTitle>
+              <div className="absolute top-4 right-4 z-10">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setFullscreenArtwork(null)}
+                  className="text-white hover:bg-white/20"
+                  data-testid="button-close-fullscreen"
+                >
+                  <X className="w-6 h-6" />
+                </Button>
+              </div>
+              <div className="flex-1 flex items-center justify-center p-8">
+                <img
+                  src={fullscreenArtwork.imageUrl}
+                  alt={fullscreenArtwork.title}
+                  className="max-w-full max-h-[80vh] object-contain"
+                  data-testid="img-fullscreen"
+                />
+              </div>
+              <div className="p-4 text-center text-white">
+                <h2 className="text-xl font-serif font-semibold">{fullscreenArtwork.title}</h2>
+                <p className="text-white/70">{fullscreenArtwork.artist}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
